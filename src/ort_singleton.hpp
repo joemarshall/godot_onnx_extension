@@ -5,20 +5,22 @@
 
 using namespace godot;
 
-class MySingleton : public Object
+class OnnxRunner : public Object
 {
-	GDCLASS(MySingleton, Object);
+	GDCLASS(OnnxRunner, Object);
 
-	static MySingleton *singleton;
+	static OnnxRunner *singleton;
+
+	bool initialized_api;
 
 protected:
 	static void _bind_methods();
 
 public:
-	static MySingleton *get_singleton();
+	static OnnxRunner *get_singleton();
 
-	MySingleton();
-	~MySingleton();
+	OnnxRunner();
+	~OnnxRunner();
 
 	void hello_singleton();
 };
