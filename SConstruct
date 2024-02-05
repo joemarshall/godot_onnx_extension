@@ -17,6 +17,9 @@ get_onnx_cmd = env.Command(f'{onnx_path}/include/onnxruntime_cxx_api.h',source='
 # Add source files.
 env.Append(CPPPATH=["src/",f"{onnx_path}/include"])
 sources = Glob("src/*.cpp")
+env.Append(LIBPATH=f"{onnx_path}/lib/")
+env.Append(LIBS=["onnxruntime","onnxruntime_providers_shared"])
+
 
 # Find gdextension path even if the directory or extension is renamed (e.g. project/addons/example/example.gdextension).
 (extension_path,) = glob("project/addons/*/*.gdextension")

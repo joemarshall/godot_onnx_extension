@@ -25,7 +25,7 @@ def get_onnx(env,target_include_files):
     print(f"Getting onnx runtime from: {source_url}")
     file_name=source_url.split("/")[-1]
     with tempfile.TemporaryDirectory() as td:
-        tmp_file=Path(td,file_name)
+        tmp_file=Path(td) / file_name
         print(f"Downloading to{tmp_file}")
         subprocess.check_call(["curl","-L","-o",tmp_file,source_url])
         target_path= Path("onnxruntimes")

@@ -14,7 +14,6 @@ namespace Ort
 // which you can use to run inference with
 class OnnxSession : public Object
 {
-	friend class OnnxRunner;
 
 	GDCLASS(OnnxSession, Object);
 
@@ -22,20 +21,22 @@ class OnnxSession : public Object
 
 protected:
 	static void _bind_methods();
-	Vector<Vector<float_t>> _run_internal(Vector<Vector<float_t>> inputs);
+	Vector<PackedFloat32Array> _run_internal(Vector<PackedFloat32Array> &inputs);
 	// only construct via OnnxRunner
-	OnnxSession(Ort::Session &session);
 	~OnnxSession();
 
 public:
+	OnnxSession(Ort::Session *session);
 	// should never get called
 	OnnxSession(){};
 
-	int num_inputs();
-	Vector<int> input_shape(int idx);
-	String input_name(int idx);
+	Variant OnnxSession::run(Variant input);
 
-	int num_outputs();
-	Vector<int> output_shape(int idx);
-	String output_name(int idx);
+	uint32_t num_inputs();
+	Vector<int64_t> input_shape(uint32_t idx);
+	String input_name(uint32_t idx);
+
+	uint32_t num_outputs();
+	Vector<int64_t> output_shape(uint32_t idx);
+	String output_name(uint32_t idx);
 };
