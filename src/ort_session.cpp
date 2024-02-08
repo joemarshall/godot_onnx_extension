@@ -7,6 +7,10 @@
 #include <cassert>
 #include <iostream>
 
+#ifdef __MINGW64__
+#define _stdcall __stdcall
+#endif
+
 #include <onnxruntime_cxx_api.h>
 
 using namespace godot;

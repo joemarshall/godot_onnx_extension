@@ -3,6 +3,9 @@
 #include <godot_cpp/core/class_db.hpp>
 #include <godot_cpp/variant/utility_functions.hpp>
 
+#ifdef __MINGW64__
+#define _stdcall __stdcall
+#endif
 #include <onnxruntime_cxx_api.h>
 
 #include"ort_session.hpp"
