@@ -1,4 +1,4 @@
-#include "ort_singleton.hpp"
+#include "ort_runner.hpp"
 
 #include <godot_cpp/core/class_db.hpp>
 #include <godot_cpp/variant/utility_functions.hpp>
@@ -35,7 +35,13 @@ OnnxRunner::OnnxRunner()
 OnnxRunner::~OnnxRunner()
 {
 	ERR_FAIL_COND(singleton != this);
+	delete env;
 	singleton = nullptr;
+}
+
+void log_fn (void *param, OrtLoggingLevel severity, const char *category, const char *logid, const char *code_location, const char *message)
+{
+	std::cout <<message <<std::endl;
 }
 
 void OnnxRunner::_init_api()
@@ -44,14 +50,19 @@ void OnnxRunner::_init_api()
 		#ifdef ORT_API_MANUAL_INIT
 		Ort::InitApi();
 		#endif
+		env=new Ort::Env(ORT_LOGGING_LEVEL_VERBOSE, "test",log_fn,NULL);
+
 		initialized_api=true;
 	}
 }
 
+
+
 OnnxSession* OnnxRunner::load_model(String model_source )
 {
+	std::cout << "INIT API" <<std::endl;
 	_init_api();
-	Ort::Env env(ORT_LOGGING_LEVEL_WARNING, "test");
+	std::cout << "DONE" <<std::endl;
 	const auto& api = Ort::GetApi();
 	OrtTensorRTProviderOptionsV2* tensorrt_options;
 
@@ -65,8 +76,20 @@ OnnxSession* OnnxRunner::load_model(String model_source )
 	#else
 	const char* model_path = model_source.ascii().get_data();
 	#endif
-	Ort::Session *session=new Ort::Session(env, model_path, session_options);
-	return new OnnxSession(session);
+	std::wcout << L"MODEL PATH:" << model_path <<std::endl;
+	try
+	{
+		Ort::Session *session=new Ort::Session(*env, model_path, session_options);
+		std::cout << "MADE SESSION!" <<std::endl;
+		OnnxSession* newSession= memnew(OnnxSession);
+		newSession->connectOnnxSession(session);
+		return newSession;
+	}
+	catch(const std::exception& e)
+	{
+		std::cerr << e.what() << '\n';
+		return NULL;
+	}	
 }
 
 void OnnxRunner::hello_singleton()

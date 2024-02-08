@@ -6,6 +6,10 @@
 using namespace godot;
 
 class OnnxSession;
+namespace Ort
+{
+	class Env;
+}
 
 class OnnxRunner : public Object
 {
@@ -18,6 +22,8 @@ class OnnxRunner : public Object
 protected:
 	static void _bind_methods();
 	void _init_api();
+
+	Ort::Env *env;
 
 public:
 	static OnnxRunner *get_singleton();

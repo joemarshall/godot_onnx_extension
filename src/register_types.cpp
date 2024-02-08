@@ -8,7 +8,7 @@
 
 #include "my_node.hpp"
 #include "ort_session.hpp"
-#include "ort_singleton.hpp"
+#include "ort_runner.hpp"
 
 #include<iostream>
 
@@ -42,7 +42,6 @@ extern "C"
 {
 	GDExtensionBool GDE_EXPORT gdextension_init(GDExtensionInterfaceGetProcAddress p_get_proc_address, GDExtensionClassLibraryPtr p_library, GDExtensionInitialization *r_initialization)
 	{
-		printf(NULL);
 		std::cout << "INIT EXTENSION" <<std::endl;
 		godot::GDExtensionBinding::InitObject init_obj(p_get_proc_address, p_library, r_initialization);
 

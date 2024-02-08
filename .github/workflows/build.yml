@@ -126,6 +126,21 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ github.event.repository.name }}
+          name: ${{ github.event.repository.name }}-{{matrix.identifier}}
           path: |
             ${{ github.workspace }}/project/
+  combine:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ${{ github.workspace }}/project/
+          merge-multiple: true
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ github.event.repository.name }}-plugin
+          path: ${{ github.workspace }}/project/
+
