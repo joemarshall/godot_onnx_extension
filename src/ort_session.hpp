@@ -30,7 +30,7 @@ public:
 	void connectOnnxSession(Ort::Session *session);
 	OnnxSession();
 
-	Variant OnnxSession::run(Variant input);
+	Variant run(Variant input);
 
 	uint32_t num_inputs();
 	PackedInt64Array input_shape(uint32_t idx);
