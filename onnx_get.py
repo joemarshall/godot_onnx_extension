@@ -8,6 +8,7 @@ VERSION="1.17.0"
 SOURCES={
         "windows":f"https://github.com/microsoft/onnxruntime/releases/download/v1.17.0/onnxruntime-win-x64-{VERSION}.zip",
         "macos":f"https://github.com/microsoft/onnxruntime/releases/download/v1.17.0/onnxruntime-osx-universal2-{VERSION}.tgz",
+        "linux":f"https://github.com/microsoft/onnxruntime/releases/download/v1.17.0/onnxruntime-linux-x64-{VERSION}.tgz",
         "linuxbsd":f"https://github.com/microsoft/onnxruntime/releases/download/v1.17.0/onnxruntime-linux-x64-{VERSION}.tgz",
         "android":f"https://github.com/microsoft/onnxruntime/releases/download/v1.17.0/onnxruntime-linux-aarch64-{VERSION}.tgz"
 }
