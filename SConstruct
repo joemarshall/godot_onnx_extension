@@ -2,8 +2,13 @@
 from glob import glob
 from pathlib import Path
 import onnx_get
+import os
 
 
+scons_cache_path = os.environ.get("SCONS_CACHE")
+if scons_cache_path != None:
+     CacheDir(scons_cache_path)
+     print("Scons cache enabled... (path: '" + scons_cache_path + "')")
 
 def download_onnx_release(target,source,env):
     onnx_get.get_onnx(env,target)
@@ -31,11 +36,6 @@ addon_path = Path(extension_path).parent
 # Find the project name from the gdextension file (e.g. example).
 project_name = Path(extension_path).stem
 
-# TODO: Cache is disabled currently.
-# scons_cache_path = os.environ.get("SCONS_CACHE")
-# if scons_cache_path != None:
-#     CacheDir(scons_cache_path)
-#     print("Scons cache enabled... (path: '" + scons_cache_path + "')")
 
 # Create the library target (e.g. libexample.linux.debug.x86_64.so).
 debug_or_release = "release" if env["target"] == "template_release" else "debug"
