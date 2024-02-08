@@ -101,7 +101,7 @@ jobs:
             ${{ github.workspace }}/godot-cpp
           key: ${{ matrix.identifier }}-${{ github.ref }}-${{ github.sha }}
       - name: get godot submodule
-        if: !steps.cache.outputs.cache-hit
+        if: steps.cache.outputs.cache-hit != 'true'
         shell: sh
         run: |
           cd godot-cpp
