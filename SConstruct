@@ -16,6 +16,7 @@ onnx_path=onnx_get.get_onnx_path(env)
 get_onnx_cmd = env.Command(f'{onnx_path}/include/onnxruntime_cxx_api.h',source='onnx_get.py',action=download_onnx_release)
 # Add source files.
 env.Append(CPPPATH=["src/",f"{onnx_path}/include"])
+env.Append(CCFLAGS="-fexceptions")
 sources = Glob("src/*.cpp")
 env.Append(LIBPATH=f"{onnx_path}/lib/")
 env.Append(LIBS=["onnxruntime","onnxruntime_providers_shared"])
