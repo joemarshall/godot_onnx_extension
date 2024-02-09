@@ -96,7 +96,7 @@ jobs:
         shell: bash
         run: |
           export COMMIT_ID=`git ls-tree HEAD godot-cpp |  awk '{print $3}'`
-          echo "godot_commit=${COMMIT_ID}" >> "$GITHUB_ENV"
+          echo "godot_commit=${COMMIT_ID}" >> "$GITHUB_OUTPUT"
       - name: Set up SCons cache
         id: cache
         uses: actions/cache@v3
