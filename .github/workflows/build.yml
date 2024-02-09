@@ -104,6 +104,7 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true'
         shell: sh
         run: |
+          git submodule deinit "godot-cpp""
           git submodule update --init "godot-cpp"
       - name: Compile extension
         shell: sh
