@@ -99,12 +99,11 @@ jobs:
             ${{ github.workspace }}/.scons-cache/
             ${{ github.workspace }}/**/.sconsign.dblite
             ${{ github.workspace }}/godot-cpp
-          key: ${{ matrix.identifier }}
+          key: ${{ matrix.identifier }}-scons-cache
       - name: get godot submodule
         if: steps.cache.outputs.cache-hit != 'true'
         shell: sh
         run: |
-          git submodule deinit "godot-cpp""
           git submodule update --init "godot-cpp"
       - name: Compile extension
         shell: sh
