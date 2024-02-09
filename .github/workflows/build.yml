@@ -99,7 +99,7 @@ jobs:
             ${{ github.workspace }}/.scons-cache/
             ${{ github.workspace }}/**/.sconsign.dblite
             ${{ github.workspace }}/godot-cpp
-          key: ${{ matrix.identifier }}-${{ github.ref }}-${{ github.sha }}
+          key: ${{ matrix.identifier }}
       - name: get godot submodule
         if: steps.cache.outputs.cache-hit != 'true'
         shell: sh
