@@ -22,8 +22,11 @@
 #define _Out_writes_all_(X)
 #define _Success_(X)
 #define _Outptr_result_buffer_maybenull_(X)
-#define ORT_ALL_ARGS_NONNULL __attribute__((nonnull))
+
 
 #endif
+#include "ort_exception_catcher.h"
 
+#define ORT_NO_EXCEPTIONS
+#define ORT_CXX_API_THROW(string,code) OrtExceptionCatcher::Report(string,code)
 #include <onnxruntime_cxx_api.h>

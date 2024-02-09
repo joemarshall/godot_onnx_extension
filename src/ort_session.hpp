@@ -10,6 +10,8 @@ namespace Ort
 	class Session;
 };
 
+struct _ModelInfoInternal;
+
 // a single session connection (i.e. an instantiated model)
 // which you can use to run inference with
 class OnnxSession : public RefCounted
@@ -17,7 +19,7 @@ class OnnxSession : public RefCounted
 
 	GDCLASS(OnnxSession, RefCounted);
 
-	Ort::Session *m_session;
+	_ModelInfoInternal *m_model;
 
 protected:
 

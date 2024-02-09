@@ -22,7 +22,6 @@ Depends("src/onnx_mingw_overrides.h",get_onnx_cmd)
 
 # Add source files.
 env.Append(CPPPATH=["src/",f"{onnx_path}/include"])
-env.Append(CCFLAGS="-fexceptions")
 sources = Glob("src/*.cpp")
 env.Append(LIBPATH=f"{onnx_path}/lib/")
 env.Append(LIBS=["onnxruntime"])

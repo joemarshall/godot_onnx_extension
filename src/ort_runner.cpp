@@ -77,19 +77,18 @@ OnnxSession* OnnxRunner::load_model(String model_source )
 	const char* model_path = model_source.ascii().get_data();
 	#endif
 	std::wcout << L"MODEL PATH:" << model_path <<std::endl;
-	try
 	{
+		OrtExceptionCatcher catcher;
 		Ort::Session *session=new Ort::Session(*env, model_path, session_options);
 		std::cout << "MADE SESSION!" <<std::endl;
 		OnnxSession* newSession= memnew(OnnxSession);
 		newSession->connectOnnxSession(session);
+		if(catcher.HasError()){
+			ERR_FAIL_V_MSG(NULL, vformat("Error loading onnx model: %s (%d)",catcher.GetErrorString(),catcher.GetErrorCode()));
+			return NULL;
+		}
 		return newSession;
 	}
-	catch(const std::exception& e)
-	{
-		std::cerr << e.what() << '\n';
-		return NULL;
-	}	
 }
 
 void OnnxRunner::hello_singleton()

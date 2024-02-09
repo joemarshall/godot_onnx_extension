@@ -11,17 +11,62 @@
 
 using namespace godot;
 
+class _ModelInfoInternal{
+public:
+	_ModelInfoInternal(Ort::Session* in_session)
+		:session(in_session)
+	{
+		num_inputs = session->GetInputCount();
+		for (size_t idx = 0; idx < num_inputs; idx++)
+		{
+			auto input_name = session->GetInputNameAllocated(idx, allocator);
+			input_names.push_back(input_name.get());
+			input_name_ptrs.push_back(std::move(input_name));
+
+			auto type_info = session->GetInputTypeInfo(idx);
+			auto tensor_info = type_info.GetTensorTypeAndShapeInfo();
+			auto input_node_dims = tensor_info.GetShape();
+			input_shapes.push_back(input_node_dims);
+			input_infos.push_back(tensor_info);
+		}
+		num_outputs = session->GetOutputCount();
+		for (size_t idx = 0; idx < num_outputs; idx++)
+		{
+			auto output_name = session->GetOutputNameAllocated(idx, allocator);
+			output_names.push_back(output_name.get());
+			output_name_ptrs.push_back(std::move(output_name));
+
+			auto type_info = session->GetOutputTypeInfo(idx);
+			auto tensor_info = type_info.GetTensorTypeAndShapeInfo();
+			auto output_node_dims = tensor_info.GetShape();
+			output_shapes.push_back(output_node_dims);
+			output_infos.push_back(tensor_info);
+
+		}
+
+
+	}
+
+	~_ModelInfoInternal()
+	{
+		delete session;
+	}
+	Ort::Session *session;
+	Ort::AllocatorWithDefaultOptions allocator;
+	std::vector<Ort::AllocatedStringPtr> input_name_ptrs;
+	std::vector<Ort::AllocatedStringPtr> output_name_ptrs;
+	std::vector<char*> input_names;
+	std::vector<char*> output_names;
+	std::vector<Ort::ConstTensorTypeAndShapeInfo> input_infos;
+	std::vector<Ort::ConstTensorTypeAndShapeInfo> output_infos;
+	int num_outputs;
+	int num_inputs;
+	std::vector<std::vector<int64_t>> input_shapes;
+	std::vector<std::vector<int64_t>> output_shapes;
+};
+
 void OnnxSession::_bind_methods()
 {
-	// Variant OnnxSession::run(Variant input);
-
-	// uint32_t num_inputs();
-	// PackedInt64Array input_shape(uint32_t idx);
-	// String input_name(uint32_t idx);
-
-	// uint32_t num_outputs();
-	// PackedInt64Array output_shape(uint32_t idx);
-	// String output_name(uint32_t idx);
 
 	ClassDB::bind_method(D_METHOD("run"), &OnnxSession::run);
 	ClassDB::bind_method(D_METHOD("num_inputs"), &OnnxSession::num_inputs);
@@ -32,42 +77,35 @@ void OnnxSession::_bind_methods()
 	ClassDB::bind_method(D_METHOD("output_name"), &OnnxSession::output_name);
 }
 
-OnnxSession::OnnxSession() : m_session(NULL), RefCounted()
+OnnxSession::OnnxSession() : m_model(NULL), RefCounted()
 {
 }
 
 void OnnxSession::connectOnnxSession(Ort::Session *session)
 {
-	m_session = session;
+	m_model = new _ModelInfoInternal(session);
 }
 
 OnnxSession::~OnnxSession()
 {
-	if (m_session != NULL)
+	if (m_model != NULL)
 	{
 		// session object should clean itself up on destruction
-		delete m_session;
-		m_session = NULL;
+		delete m_model;
+		m_model = NULL;
 	}
 }
 
 uint32_t OnnxSession::num_inputs()
 {
-	const Ort::Session &session = *m_session;
-	return (uint32_t)session.GetInputCount();
+	return m_model->num_inputs;
 }
 
 PackedInt64Array OnnxSession::input_shape(uint32_t idx)
 {
 	ERR_FAIL_INDEX_V_MSG(idx, num_inputs(), PackedInt64Array(), vformat("Input index: %d is out of range (0--%d)", idx, num_inputs()));
-	const Ort::Session &session = *m_session;
 	PackedInt64Array ret_dimensions;
-
-	auto type_info = session.GetInputTypeInfo(idx);
-	auto tensor_info = type_info.GetTensorTypeAndShapeInfo();
-	auto input_node_dims = tensor_info.GetShape();
-
-	for (auto x : input_node_dims)
+	for (auto x : m_model->input_shapes[idx])
 	{
 		ret_dimensions.push_back(x);
 	}
@@ -77,31 +115,20 @@ PackedInt64Array OnnxSession::input_shape(uint32_t idx)
 String OnnxSession::input_name(uint32_t idx)
 {
 	ERR_FAIL_INDEX_V_MSG(idx, num_inputs(), String(), vformat("Input index: %d is out of range (0--%d)", idx, num_inputs()));
-	const Ort::Session &session = *m_session;
-
-	Ort::AllocatorWithDefaultOptions allocator;
-	auto input_name = session.GetInputNameAllocated(idx, allocator);
-	String input_copy = String(input_name.get());
+	String input_copy = String(m_model->input_names[idx]);
 	return input_copy;
 }
 
 uint32_t OnnxSession::num_outputs()
 {
-	const Ort::Session &session = *m_session;
-	return (uint32_t)session.GetOutputCount();
+	return m_model->num_outputs;
 }
 
 PackedInt64Array OnnxSession::output_shape(uint32_t idx)
 {
 	ERR_FAIL_INDEX_V_MSG(idx, num_outputs(), PackedInt64Array(), vformat("Output index: %d is out of range (0--%d)", idx, num_inputs()));
-	const Ort::Session &session = *m_session;
 	PackedInt64Array ret_dimensions;
-
-	auto type_info = session.GetOutputTypeInfo(idx);
-	auto tensor_info = type_info.GetTensorTypeAndShapeInfo();
-	auto output_node_dims = tensor_info.GetShape();
-
-	for (auto x : output_node_dims)
+	for (auto x : m_model->output_shapes[idx])
 	{
 		ret_dimensions.push_back(x);
 	}
@@ -111,11 +138,8 @@ PackedInt64Array OnnxSession::output_shape(uint32_t idx)
 String OnnxSession::output_name(uint32_t idx)
 {
 	ERR_FAIL_INDEX_V_MSG(idx, num_outputs(), String(), vformat("Output index: %d is out of range (0--%d)", idx, num_inputs()));
-	const Ort::Session &session = *m_session;
-
-	Ort::AllocatorWithDefaultOptions allocator;
-	auto output_name = session.GetOutputNameAllocated(idx, allocator);
-	return String(output_name.get());
+	String output_copy = String(m_model->output_names[idx]);
+	return output_copy;
 }
 
 Variant OnnxSession::run(Variant input)
@@ -145,9 +169,14 @@ Variant OnnxSession::run(Variant input)
 	{
 		ERR_FAIL_V_MSG(Variant(), "Input needs to be either a single PackedFloat32Array, or an Array of them");
 	}
-	try
 	{
+		OrtExceptionCatcher catcher;
 		auto outputs = _run_internal(inputs);
+		if(catcher.HasError())
+		{
+			ERR_FAIL_V_MSG(Variant(), vformat("Error in onnx runtime: %s (%d)",catcher.GetErrorString(),catcher.GetErrorCode()));
+			return Variant();
+		}
 		Variant retval;
 		if (outputs.size() == 1)
 		{
@@ -168,36 +197,18 @@ Variant OnnxSession::run(Variant input)
 		}
 		return retval;
 	}
-	catch (const std::exception &e)
-	{
-		std::cerr << "Exc" <<e.what() << '\n';
-	}
 	return Variant();
 }
 
 Vector<PackedFloat32Array> OnnxSession::_run_internal(Vector<PackedFloat32Array> &inputs)
 {
-	Ort::Session &session = *m_session;
-	const size_t num_input_nodes = session.GetInputCount();
+	const size_t num_input_nodes = m_model->num_inputs;
 	ERR_FAIL_COND_V_MSG(inputs.size() != num_input_nodes, Vector<PackedFloat32Array>(), "Wrong number of inputs for OnnxSession run");
 	std::vector<Ort::Value> in_tensors;
 
-	std::vector<const char *> input_node_names;
-	// this second vector is used because otherwise output_name will be deallocated
-	// at end of loop iteration below, whereas we want it deallocated after calling session.Run
-	std::vector<Ort::AllocatedStringPtr> input_node_names_ptr;
-	Ort::AllocatorWithDefaultOptions allocator;
 	for (size_t idx = 0; idx < num_input_nodes; idx++)
 	{
-		auto input_name = session.GetInputNameAllocated(idx, allocator);
-		input_node_names.push_back(input_name.get());
-		input_node_names_ptr.push_back(std::move(input_name));
-	}
-
-	for (size_t idx = 0; idx < num_input_nodes; idx++)
-	{
-		auto type_info = session.GetInputTypeInfo(idx);
-		auto tensor_info = type_info.GetTensorTypeAndShapeInfo();
+		auto tensor_info = m_model->input_infos[idx];
 		auto input_node_dims = tensor_info.GetShape();
 		auto memory_info = Ort::MemoryInfo::CreateCpu(OrtArenaAllocator, OrtMemTypeDefault);
 		auto element_count = tensor_info.GetElementCount();
@@ -211,20 +222,13 @@ Vector<PackedFloat32Array> OnnxSession::_run_internal(Vector<PackedFloat32Array>
 		in_tensors.push_back(std::move(input_tensor));
 	}
 
-	const size_t num_output_nodes = session.GetOutputCount();
+	const size_t num_output_nodes = m_model->num_outputs;
 	std::vector<const char *> output_node_names;
 	// this second vector is used because otherwise output_name will be deallocated
 	// at end of loop iteration below, whereas we want it deallocated after calling session.Run
-	std::vector<Ort::AllocatedStringPtr> output_names_ptr;
-	for (size_t idx = 0; idx < num_output_nodes; idx++)
-	{
-		auto output_name = session.GetOutputNameAllocated(idx, allocator);
-		output_node_names.push_back(output_name.get());
-		output_names_ptr.push_back(std::move(output_name));
-	}
 	auto run_options = Ort::RunOptions();
 	auto output_tensors =
-		session.Run(run_options, input_node_names.data(), in_tensors.data(), in_tensors.size(), output_node_names.data(), output_node_names.size());
+		m_model->session->Run(run_options, m_model->input_names.data(), in_tensors.data(), in_tensors.size(), m_model->output_names.data(), m_model->output_names.size());
 	assert(output_tensors.size() == num_output_nodes && output_tensors.front().IsTensor());
 
 	Vector<PackedFloat32Array> out_vals;
