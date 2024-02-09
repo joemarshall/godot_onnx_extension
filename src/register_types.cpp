@@ -6,7 +6,6 @@
 #include <godot_cpp/classes/engine.hpp>
 #include <godot_cpp/godot.hpp>
 
-#include "my_node.hpp"
 #include "ort_session.hpp"
 #include "ort_runner.hpp"
 
