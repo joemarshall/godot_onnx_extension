@@ -23,10 +23,7 @@ env.Append(CPPPATH=["src/",f"{onnx_path}/include"])
 env.Append(CCFLAGS="-fexceptions")
 sources = Glob("src/*.cpp")
 env.Append(LIBPATH=f"{onnx_path}/lib/")
-shlib_suffix=env["SHLIBSUFFIX"]
-shlib_prefix=env["SHLIBPREFIX"]
-all_libs=glob(f"{onnx_path}/lib/{shlib_prefix}*{shlib_suffix}")
-env.Append(LIBS=[Path(x).stem for x in all_libs])
+env.Append(LIBS=["onnxruntime"])
 
 
 # Find gdextension path even if the directory or extension is renamed (e.g. project/addons/example/example.gdextension).
