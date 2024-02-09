@@ -27,7 +27,7 @@ def get_onnx(env,target_include_files):
     file_name=source_url.split("/")[-1]
     with tempfile.TemporaryDirectory() as td:
         tmp_file=Path(td) / file_name
-        print(f"Downloading to{tmp_file}")
+        print(f"Downloading to{tmp_file} from {source_url}")
         subprocess.check_call(["curl","-L","-o",tmp_file,source_url])
         if tmp_file.suffix==".aar":
             shutil.unpack_archive(tmp_file,extract_dir=td,format="zip")
@@ -37,12 +37,13 @@ def get_onnx(env,target_include_files):
             # android aar file 
             # rename to zip and unpack:
             # 1) jni things (the lib whatever.so) from /jni/platform_name/...
+            print("copying onnx aar into project structure")
             arch = env['arch']
-            for x in Path(tmp_file).glob("jni/{arch}*/libonnxruntime.so"):
+            for x in Path(td).glob("jni/{arch}*/libonnxruntime.so"):
                 print(f"Copying from AAR: {x}")
                 shutil.copy2(x,onnx_path / "lib")
             # 2) headers (from /headers)
-            for x in Path(tmp_file).glob("headers/*.h"):
+            for x in Path(td).glob("headers/*.h"):
                 print(f"Copying from AAR: {x}")
                 shutil.copy2(x,onnx_path / "include")
             (Path(get_onnx_path(env)) / ".download_time").write_bytes(b"")
