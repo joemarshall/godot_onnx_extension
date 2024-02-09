@@ -15,17 +15,18 @@ def download_onnx_release(target,source,env):
 
 # TODO: Do not copy environment after godot-cpp/test is updated <https://github.com/godotengine/godot-cpp/blob/master/test/SConstruct>.
 env = SConscript("godot-cpp/SConstruct")
-
 onnx_path=onnx_get.get_onnx_path(env)
 
-get_onnx_cmd = env.Command(f'{onnx_path}/include/onnxruntime_cxx_api.h',source='onnx_get.py',action=download_onnx_release)
+get_onnx_cmd = env.Command(f'{onnx_path}/.download_time',source='onnx_get.py',action=download_onnx_release)
 # Add source files.
 env.Append(CPPPATH=["src/",f"{onnx_path}/include"])
 env.Append(CCFLAGS="-fexceptions")
 sources = Glob("src/*.cpp")
 env.Append(LIBPATH=f"{onnx_path}/lib/")
 shlib_suffix=env["SHLIBSUFFIX"]
-env.Append(LIBS=glob(f"{onnx_path}/lib/*{shlib_suffix}"))
+shlib_prefix=env["SHLIBPREFIX"]
+all_libs=glob(f"{onnx_path}/lib/{shlib_prefix}*{shlib_suffix}")
+env.Append(LIBS=[Path(x).stem for x in all_libs])
 
 
 # Find gdextension path even if the directory or extension is renamed (e.g. project/addons/example/example.gdextension).

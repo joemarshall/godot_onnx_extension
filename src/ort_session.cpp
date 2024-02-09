@@ -7,11 +7,7 @@
 #include <cassert>
 #include <iostream>
 
-#ifdef __MINGW64__
-#define _stdcall __stdcall
-#endif
-
-#include <onnxruntime_cxx_api.h>
+#include "onnx_mingw_overrides.h"
 
 using namespace godot;
 
@@ -136,7 +132,7 @@ Variant OnnxSession::run(Variant input)
 		{
 			Variant this_arr = arr[i];
 			// input should be PACKED_FLOAT32_ARRAY
-			ERR_FAIL_COND_V_MSG(this_arr.get_type() != Variant::PACKED_FLOAT32_ARRAY, NULL, "OnnxSession input data must be PackedFloat32Array or an Array of them");
+			ERR_FAIL_COND_V_MSG(this_arr.get_type() != Variant::PACKED_FLOAT32_ARRAY, Variant(), "OnnxSession input data must be PackedFloat32Array or an Array of them");
 			PackedFloat32Array as_arr = static_cast<PackedFloat32Array>(this_arr);
 			inputs.push_back(as_arr);
 		}
