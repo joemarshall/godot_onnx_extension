@@ -137,6 +137,10 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
+      - name: Checkout project
+        uses: actions/checkout@v2
+        with:
+          submodules: false
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
