@@ -119,8 +119,8 @@ def check_cache_hit(target,source,env):
     print("Checking cache")
     cd = env.get_CacheDir()
     if cd!=None:
-        print(f"Cache hit ratio:{cd.hit_ratio}, missed {cd.missed}")
-        if cd.hit_ratio<60.0 and cd.missed>5:
+        print(f"Cache hit ratio:{cd.hit_ratio}, missed {cd.misses}")
+        if cd.hit_ratio<60.0 and cd.misses>5:
             Path(str(target[0])).write_text("cache-hit=false")
         else:
             Path(str(target[0])).write_text("cache-hit=true")
