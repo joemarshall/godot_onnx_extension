@@ -142,6 +142,11 @@ jobs:
         with:
           path: ${{ github.workspace }}/project/
           merge-multiple: true
+      - name: Generate gdextension file from parts
+        shell: bash
+        run: | 
+          python merge_config_parts.py
+          rm project/addons/*/*.part          
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
