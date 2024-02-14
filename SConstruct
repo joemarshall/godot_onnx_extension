@@ -3,65 +3,113 @@ from glob import glob
 from pathlib import Path
 import onnx_get
 import os
-
+import re
+import godotconfig
 
 scons_cache_path = os.environ.get("SCONS_CACHE")
 if scons_cache_path != None:
-     CacheDir(scons_cache_path)
-     print("Scons cache enabled... (path: '" + scons_cache_path + "')")
+    CacheDir(scons_cache_path)
+    print("Scons cache enabled... (path: '" + scons_cache_path + "')")
 
-def download_onnx_release(target,source,env):
-    onnx_get.get_onnx(env,target)
 
 # TODO: Do not copy environment after godot-cpp/test is updated <https://github.com/godotengine/godot-cpp/blob/master/test/SConstruct>.
 env = SConscript("godot-cpp/SConstruct")
-onnx_path=onnx_get.get_onnx_path(env)
+onnx_src_path, onnx_dest_path = onnx_get.get_onnx_path(env)
 
-get_onnx_cmd = env.Command(f'{onnx_path}/.download_time',source='onnx_get.py',action=download_onnx_release)
-Depends("src/onnx_mingw_overrides.h",get_onnx_cmd)
 
 # Add source files.
-env.Append(CPPPATH=["src/",f"{onnx_path}/include"])
+env.Append(CPPPATH=["src/", f"{onnx_src_path}/include"])
 sources = Glob("src/*.cpp")
-env.Append(LIBPATH=f"{onnx_path}/lib/")
+env.Append(LIBPATH=f"{onnx_src_path}/lib/")
 env.Append(LIBS=["onnxruntime"])
-
-
 
 # Find gdextension path even if the directory or extension is renamed (e.g. project/addons/example/example.gdextension).
 (extension_path,) = glob("project/addons/*/*.gdextension")
 
 # Find the addon path (e.g. project/addons/example).
 addon_path = Path(extension_path).parent
+onnx_dest_path = addon_path / onnx_dest_path
 
 # Find the project name from the gdextension file (e.g. example).
 project_name = Path(extension_path).stem
 
 
+# download onnx and copy to destination path
+def download_onnx_release(target, source, env):
+    global addon_path
+    onnx_get.get_onnx(env, addon_path)
+
+
+get_onnx_cmd = env.Command(
+    f"{onnx_src_path}/.download_time",
+    source="onnx_get.py",
+    action=download_onnx_release,
+)
+# make sure onnx is got before we try to build the source that uses it
+Depends("src/onnx_mingw_overrides.h", get_onnx_cmd)
+
 # Create the library target (e.g. libexample.linux.debug.x86_64.so).
 debug_or_release = "release" if env["target"] == "template_release" else "debug"
+
+
 if env["platform"] == "macos":
-    library = env.SharedLibrary(
-        "{0}/bin/lib{1}.{2}.{3}.framework/{1}.{2}.{3}".format(
-            addon_path,
-            project_name,
-            env["platform"],
-            debug_or_release,
-        ),
-        source=sources,
+    target_lib_name = "{0}/bin/lib{1}.{2}.{3}.framework/{1}.{2}.{3}".format(
+        addon_path,
+        project_name,
+        env["platform"],
+        debug_or_release,
     )
 else:
-    library = env.SharedLibrary(
-        "{}/bin/lib{}.{}.{}.{}{}".format(
-            addon_path,
-            project_name,
-            env["platform"],
-            debug_or_release,
-            env["arch"],
-            env["SHLIBSUFFIX"],
-        ),
-        source=sources,
+    # shared library has to be in same path as onnx libraries,
+    # otherwise we have to deal with library search paths and
+    # it could be a pain
+    target_lib_name = "{}/lib{}.{}.{}.{}{}".format(
+        onnx_dest_path,
+        project_name,
+        env["platform"],
+        debug_or_release,
+        env["arch"],
+        env["SHLIBSUFFIX"],
     )
-Depends(library,get_onnx_cmd)
 
-Default(library)
+library = env.SharedLibrary(
+    target=target_lib_name,
+    source=sources,
+)
+
+# make gdextension part for this build setting
+# they get merged in github actions
+
+
+def make_gdextension_part(target, source, env):
+    output_path = Path(str(target[0])).absolute()
+    target_lib = Path(env["target_lib"]).absolute()
+    extension_base = Path(env["addon_path"])
+    # make library key
+    debug_or_release = env["debug_or_release"]
+    platform_key = f"{env['platform']}.{debug_or_release}.{env['arch']}"
+    lib_value = target_lib.relative_to(output_path.parent)
+    extension_values = []
+    extension_values.append(("libraries", {platform_key: lib_value}))
+    deps_keys = {}
+    for lib_name in target_lib.parent.glob(f"*{env['SHLIBSUFFIX']}"):
+        if lib_name != target_lib:
+            deps_keys[lib_name.relative_to(output_path.parent)] = ""
+    extension_values.append(("dependencies", {platform_key: deps_keys}))
+    output_path.write_text(godotconfig.get_as_text(extension_values))
+
+
+env["addon_path"] = addon_path
+env["debug_or_release"] = debug_or_release
+env["target_lib"] = target_lib_name
+make_gdextension_cmd = env.Command(
+    f"{extension_path}.{env['platform']}.{env['arch']}.{env['debug_or_release']}.part",
+    action=make_gdextension_part,
+    source=None,
+    addon_path=addon_path,
+    debug_or_release=debug_or_release,
+    target_lib_name=target_lib_name,
+)
+Depends(library, get_onnx_cmd)
+Depends(make_gdextension_cmd, library)
+Default(make_gdextension_cmd)
