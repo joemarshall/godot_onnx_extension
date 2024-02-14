@@ -97,9 +97,9 @@ jobs:
         run: |
           export COMMIT_ID=`git ls-tree HEAD godot-cpp |  awk '{print $3}'`
           echo "godot_commit=${COMMIT_ID}" >> "$GITHUB_OUTPUT"
-      - name: Set up SCons cache
+      - name: Get scons cache
         id: cache
-        uses: actions/cache@v3
+        uses: actions/cache/restore@v3
         with:
           path: |
             ${{ github.workspace }}/.scons-cache/
@@ -112,14 +112,14 @@ jobs:
         run: |
           git submodule update --init "godot-cpp"
       - name: Compile extension
+        id: compile
         shell: sh
         env:
           SCONS_CACHE: '${{ github.workspace }}/.scons-cache/'
 #          SCONS_CACHE_LIMIT: 8192
         run: |
-          scons target='${{ matrix.target }}' platform='${{ matrix.platform }}' arch='${{ matrix.arch }}' -j2
-          ls -l project/addons/*/bin/
-
+          scons target='${{ matrix.target }}' platform='${{ matrix.platform }}' arch='${{ matrix.arch }}' -Q | tee output.txt
+          cat .cache_used >> "$GITHUB_OUTPUT"
       - name: Copy extra files to addon
         shell: sh
         run: |
@@ -133,6 +133,17 @@ jobs:
           name: ${{ github.event.repository.name }}-${{matrix.identifier}}
           path: |
             ${{ github.workspace }}/project/
+      - name: Write scons cache
+        id: save_cache
+        uses: actions/cache/save@v3
+        if: steps.compile.outputs.cache-hit != 'true'
+        with:
+          path: |
+            ${{ github.workspace }}/.scons-cache/
+            ${{ github.workspace }}/**/.sconsign.dblite
+            ${{ github.workspace }}/godot-cpp
+          key: ${{ matrix.identifier }}-scons-cache-${{steps.godot_submodule.outputs.godot_commit}}
+
   combine:
     runs-on: ubuntu-latest
     needs: build
@@ -150,7 +161,7 @@ jobs:
         shell: bash
         run: | 
           python merge_config_parts.py
-          rm project/addons/*/*.part          
+          rm project/addons/*/*.part
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:

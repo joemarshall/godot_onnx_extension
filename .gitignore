@@ -1,5 +1,6 @@
 # Objects.
 .scons-cache/
+.cache_used
 *.os
 *.obj
 

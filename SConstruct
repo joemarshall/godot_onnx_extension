@@ -7,8 +7,9 @@ import re
 import godotconfig
 
 scons_cache_path = os.environ.get("SCONS_CACHE")
+cacher=None
 if scons_cache_path != None:
-    CacheDir(scons_cache_path)
+    cacher=CacheDir(scons_cache_path)
     print("Scons cache enabled... (path: '" + scons_cache_path + "')")
 
 
@@ -112,4 +113,26 @@ make_gdextension_cmd = env.Command(
 )
 Depends(library, get_onnx_cmd)
 Depends(make_gdextension_cmd, library)
-Default(make_gdextension_cmd)
+
+
+def check_cache_hit(target,source,env):
+    print("Checking cache")
+    cd = env.get_CacheDir()
+    if cd!=None:
+        print(f"Cache hit ratio:{cd.hit_ratio}, missed {cd.missed}")
+        if cd.hit_ratio<60.0 and cd.missed>5:
+            Path(str(target[0])).write_text("cache-hit=false")
+        else:
+            Path(str(target[0])).write_text("cache-hit=true")
+
+# remove .cache_used from cache or else the command will be skipped
+cd=env.get_CacheDir()
+if cd:
+    _,cache_path=cd.cachepath(env.File(".cache_used"))
+    Path(cache_path).unlink(missing_ok=True)
+
+cache_check_command=env.Command(".cache_used",source=[],action=check_cache_hit)
+env.Depends(cache_check_command,make_gdextension_cmd)
+env.AlwaysBuild(cache_check_command)
+env.AddPostAction(make_gdextension_cmd,cache_check_command)
+Default(cache_check_command)
