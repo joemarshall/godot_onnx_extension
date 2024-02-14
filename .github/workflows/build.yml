@@ -133,6 +133,14 @@ jobs:
           name: ${{ github.event.repository.name }}-${{matrix.identifier}}
           path: |
             ${{ github.workspace }}/project/
+      - name: Delete non-working cache in case you've changed something in scons etc. that forces a rebuild
+        if: ${{ steps.cache.outputs.cache-hit == 'true' && steps.compile.outputs.cache-hit != 'true' }}
+        continue-on-error: true
+        run: |
+          gh extension install actions/gh-actions-cache
+          gh actions-cache delete "${{ matrix.identifier }}-scons-cache-${{steps.godot_submodule.outputs.godot_commit}}" --confirm
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}      
       - name: Write scons cache
         id: save_cache
         uses: actions/cache/save@v3
