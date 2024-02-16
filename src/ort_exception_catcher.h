@@ -18,7 +18,7 @@ public:
     int GetErrorCode();
 
     static void Report(std::string str, int error);
-    static void Report(char *error, int code);
+    static void Report(const char *error, int code);
 
 protected:
     String errText;

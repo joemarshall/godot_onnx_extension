@@ -7,7 +7,7 @@ void OrtExceptionCatcher::Report(std::string str, int error)
     OrtExceptionCatcher::Report(str.c_str(),error);
 }
 
-void OrtExceptionCatcher::Report(char *str, int error)
+void OrtExceptionCatcher::Report(const char *str, int error)
 {
     if (current_handler != NULL)
     {
@@ -20,6 +20,8 @@ void OrtExceptionCatcher::Report(char *str, int error)
 OrtExceptionCatcher::OrtExceptionCatcher()
 {
     current_handler = this;
+    errCode=0;
+    hasError=false;
 }
 
 OrtExceptionCatcher::~OrtExceptionCatcher()

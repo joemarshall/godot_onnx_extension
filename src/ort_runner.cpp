@@ -41,7 +41,9 @@ OnnxRunner::~OnnxRunner()
 
 void log_fn (void *param, OrtLoggingLevel severity, const char *category, const char *logid, const char *code_location, const char *message)
 {
-	std::cout <<message <<std::endl;
+	if(message!=NULL){
+		std::cout <<message <<std::endl;
+	}
 }
 
 void OnnxRunner::_init_api()
@@ -50,7 +52,11 @@ void OnnxRunner::_init_api()
 		#ifdef ORT_API_MANUAL_INIT
 		Ort::InitApi();
 		#endif
-		env=new Ort::Env(ORT_LOGGING_LEVEL_VERBOSE, "test",log_fn,NULL);
+
+		env=new Ort::Env();
+//		env=new Ort::Env(ORT_LOGGING_LEVEL_VERBOSE, "test",log_fn,NULL);
+			std::cout << "made env" <<std::endl;
+
 
 		initialized_api=true;
 	}
@@ -80,7 +86,12 @@ OnnxSession* OnnxRunner::load_model(String model_source )
 	{
 		OrtExceptionCatcher catcher;
 		Ort::Session *session=new Ort::Session(*env, model_path, session_options);
+		if(catcher.HasError()){
+			ERR_FAIL_V_MSG(NULL, vformat("Error creating onnx model session: %s (%d)",catcher.GetErrorString(),catcher.GetErrorCode()));
+			return NULL;
+		}
 		std::cout << "MADE SESSION!" <<std::endl;
+
 		OnnxSession* newSession= memnew(OnnxSession);
 		newSession->connectOnnxSession(session);
 		if(catcher.HasError()){

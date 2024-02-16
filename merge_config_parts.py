@@ -10,3 +10,6 @@ for gdextension in Path("project/addons").glob("*/*.gdextension"):
     
     merged_parts=godotconfig.merge_configurations([orig_text]+other_parts)
     print(godotconfig.get_as_text(merged_parts))
+
+    gdextension.write_text(godotconfig.get_as_text(merged_parts))
+

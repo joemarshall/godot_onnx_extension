@@ -15,6 +15,9 @@ if scons_cache_path != None:
 
 # TODO: Do not copy environment after godot-cpp/test is updated <https://github.com/godotengine/godot-cpp/blob/master/test/SConstruct>.
 env = SConscript("godot-cpp/SConstruct")
+env.Decider('MD5-timestamp')
+env.SetOption('max_drift',1)
+
 onnx_src_path, onnx_dest_path = onnx_get.get_onnx_path(env)
 
 
@@ -39,6 +42,13 @@ project_name = Path(extension_path).stem
 def download_onnx_release(target, source, env):
     global addon_path
     onnx_get.get_onnx(env, addon_path)
+
+
+cd=env.get_CacheDir()
+if cd:
+    _,cache_path=cd.cachepath(env.File(f"{onnx_src_path}/.download_time"))
+    if cache_path is not None:
+        Path(cache_path).unlink(missing_ok=True)
 
 
 get_onnx_cmd = env.Command(
@@ -129,7 +139,8 @@ def check_cache_hit(target,source,env):
 cd=env.get_CacheDir()
 if cd:
     _,cache_path=cd.cachepath(env.File(".cache_used"))
-    Path(cache_path).unlink(missing_ok=True)
+    if cache_path is not None:
+        Path(cache_path).unlink(missing_ok=True)
 
 cache_check_command=env.Command(".cache_used",source=[],action=check_cache_hit)
 env.Depends(cache_check_command,make_gdextension_cmd)
