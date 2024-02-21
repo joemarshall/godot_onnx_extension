@@ -1,5 +1,23 @@
 # Godot Onnx Extension
 
+Extension to allow running inference on [onnx](https://onnxruntime.ai/) models within Godot.
+
+Usage:
+1) Load a model with `OnnxRunner.load_model`
+2) run inference on a model using 'model.run(PackedFloat32Array)`
+   
+```
+	var m = OnnxRunner.load_model(r"model.onnx")
+	print(m.num_inputs(0)) 
+	print(m.input_shape(0)) 
+	print(m.input_name(0))
+	print(m.num_outputs(0)) 
+	print(m.output_shape(0)) 
+	print(m.output_name(0))
+	var out=m.run(PackedFloat32Array([1,2,3]))
+```
+
+
 ### Repository structure:
 - `project/` - Godot project boilerplate.
   - `addons/onnx/` - Files to be distributed to other projects.¹
