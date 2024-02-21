@@ -3,11 +3,11 @@
 Extension to allow running inference on [onnx](https://onnxruntime.ai/) models within Godot.
 
 Usage:
-1) Load a model with `OnnxRunner.load_model`
-2) run inference on a model using 'model.run(PackedFloat32Array)`
+1) Load a model with `OnnxRunner.load_model` pointing at either an absolute path, or a godot `res://` project relative path.
+2) run inference on a model using 'model.run(PackedFloat32Array)`. Bear in mind that in godot, a PackedFloat32Array is one dimensional, so you need to flatten your input data.
    
 ```
-	var m = OnnxRunner.load_model(r"model.onnx")
+	var m = OnnxRunner.load_model(r"res://demo/model.onnx")
 	print(m.num_inputs(0)) 
 	print(m.input_shape(0)) 
 	print(m.input_name(0))
