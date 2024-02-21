@@ -1,7 +1,11 @@
 #include "ort_runner.hpp"
 
 #include <godot_cpp/core/class_db.hpp>
+
 #include <godot_cpp/variant/utility_functions.hpp>
+#include <godot_cpp/classes/engine.hpp>
+#include <godot_cpp/classes/file_access.hpp>
+#include <godot_cpp/classes/project_settings.hpp>
 
 #include "onnx_mingw_overrides.h"
 
@@ -13,6 +17,13 @@
 using namespace godot;
 
 OnnxRunner *OnnxRunner::singleton = nullptr;
+
+static String _get_godot_path(String pathName)
+{
+	auto settings = ProjectSettings::get_singleton();
+	String global_path = settings->globalize_path(pathName);
+	return global_path;
+}
 
 void OnnxRunner::_bind_methods()
 {
@@ -64,8 +75,12 @@ void OnnxRunner::_init_api()
 
 
 
-OnnxSession* OnnxRunner::load_model(String model_source )
+OnnxSession* OnnxRunner::load_model(String model_source_local )
 {
+	// TODO: make it load model from path relative to script / to project?
+	String model_source = _get_godot_path(model_source_local);
+	ERR_FAIL_COND_V_MSG(!FileAccess::file_exists(model_source),NULL, vformat("Couldn't find file: %s",model_source_local));
+
 	std::cout << "INIT API" <<std::endl;
 	_init_api();
 	std::cout << "DONE" <<std::endl;
@@ -88,7 +103,6 @@ OnnxSession* OnnxRunner::load_model(String model_source )
 		Ort::Session *session=new Ort::Session(*env, model_path, session_options);
 		if(catcher.HasError()){
 			ERR_FAIL_V_MSG(NULL, vformat("Error creating onnx model session: %s (%d)",catcher.GetErrorString(),catcher.GetErrorCode()));
-			return NULL;
 		}
 		std::cout << "MADE SESSION!" <<std::endl;
 

@@ -4,7 +4,7 @@ func _ready() -> void:
 	print("Hello GDScript!")
 	print(OnnxRunner)
 	print("HERE")
-	var m = OnnxRunner.load_model(r"D:\godot\godot_onnx_extension\project\demo\model.onnx")
+	var m = OnnxRunner.load_model(r"res://demo/model.onnx")
 	print("THERE")
 	m.input_shape(0);
 	print("HOO HOO")
